@@ -1,22 +1,24 @@
-FROM golang:1.11.4-alpine3.8 AS builder
-LABEL maintainer="joona@kuori.org"
+FROM golang:1-alpine AS builder
+LABEL maintainer="acme-dns@tcely.33mail.com"
 
 RUN apk add --update gcc musl-dev git
 
-RUN go get github.com/joohoi/acme-dns
-WORKDIR /go/src/github.com/joohoi/acme-dns
+RUN go get gopkg.in/tcely/acme-dns.build
+WORKDIR /go/src/github.com/tcely/acme-dns
 RUN CGO_ENABLED=1 go build
 
-FROM alpine:latest
+FROM tcely/alpine-aports
 
-WORKDIR /root/
-COPY --from=builder /go/src/github.com/joohoi/acme-dns .
-RUN mkdir -p /etc/acme-dns
-RUN mkdir -p /var/lib/acme-dns
-RUN rm -rf ./config.cfg
-RUN apk --no-cache add ca-certificates && update-ca-certificates
+EXPOSE 10053/tcp 10053/udp 10080/tcp 10443/tcp
+
+ENTRYPOINT ["/usr/local/bin/acme-dns"]
+COPY --from=builder /go/src/github.com/tcely/acme-dns /usr/local/bin/acme-dns
+
+RUN mkdir -p /etc/acme-dns /var/lib/acme-dns && chown -R postgres:postgres /var/lib/acme-dns
 
 VOLUME ["/etc/acme-dns", "/var/lib/acme-dns"]
-ENTRYPOINT ["./acme-dns"]
-EXPOSE 53 80 443
-EXPOSE 53/udp
+
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /var/lib/acme-dns
+USER postgres:postgres
