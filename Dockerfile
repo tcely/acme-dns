@@ -12,7 +12,7 @@ FROM tcely/alpine-aports
 EXPOSE 10053/tcp 10053/udp 10080/tcp 10443/tcp
 
 ENTRYPOINT ["/usr/local/bin/acme-dns"]
-COPY --from=builder /go/src/github.com/tcely/acme-dns /usr/local/bin/acme-dns
+COPY --from=builder /go/src/github.com/tcely/acme-dns/acme-dns /usr/local/bin/acme-dns
 
 RUN mkdir -p /etc/acme-dns /var/lib/acme-dns && chown -R postgres:postgres /var/lib/acme-dns
 
