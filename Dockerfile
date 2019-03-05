@@ -3,9 +3,9 @@ LABEL maintainer="acme-dns@tcely.33mail.com"
 
 RUN apk add --update gcc musl-dev git
 
-RUN go get gopkg.in/tcely/acme-dns.build
+RUN go get github.com/tcely/acme-dns
 WORKDIR /go/src/github.com/tcely/acme-dns
-RUN CGO_ENABLED=1 go build
+RUN git checkout build && CGO_ENABLED=1 go build
 
 FROM tcely/alpine-aports
 
