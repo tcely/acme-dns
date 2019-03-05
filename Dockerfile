@@ -14,11 +14,13 @@ EXPOSE 10053/tcp 10053/udp 10080/tcp 10443/tcp
 ENTRYPOINT ["/usr/local/bin/acme-dns"]
 COPY --from=builder /go/src/github.com/tcely/acme-dns/acme-dns /usr/local/bin/acme-dns
 
-RUN mkdir -p /etc/acme-dns /var/lib/acme-dns && chown -R postgres:postgres /var/lib/acme-dns
+RUN mkdir -p /etc/acme-dns /var/lib/acme-dns && chown -R postgres:postgres /var/lib/acme-dns && ln -s acme-dns /var/lib/postgresql
 
 VOLUME ["/etc/acme-dns", "/var/lib/acme-dns"]
 
-RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add ca-certificates curl
 
 WORKDIR /var/lib/acme-dns
 USER postgres:postgres
+
+HEALTHCHECK CMD curl --silent --insecure -w '%{http_code}\n' "$(awk 'BEGIN {scheme="http"; ip="127.0.0.1"; port="80";} /^tls =/ {scheme="http"; if ($NF !~ /none/) {scheme=scheme "s";}} /^ip =/ {ip=$NF; gsub(/"/, "", ip);} /^port =/ {port=$NF; gsub(/"/, "", port);} END {printf "%s://%s:%d/health\n", scheme, ip, port;}' /etc/acme-dns/config.cfg)" | awk 'BEGIN { rc=1; } /^200$/ { rc=0; } END { exit rc; }'
